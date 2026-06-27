@@ -1,0 +1,38 @@
+{
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "devPath": "../ui",
+    "distDir": "../ui"
+  },
+  "package": {
+    "productName": "GremlinDesk",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false
+    },
+    "bundle": {
+      "active": true,
+      "targets": "all",
+      "identifier": "com.gremlindesk.dev",
+      "icon": [
+        "icons/icon.png",
+        "icons/icon.ico"
+      ]
+    },
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 650,
+        "resizable": true,
+        "title": "GremlinDesk",
+        "width": 900
+      }
+    ]
+  }
+}
