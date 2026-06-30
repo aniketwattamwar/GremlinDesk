@@ -1,6 +1,6 @@
 [package]
 name = "gremlindesk-tauri"
-version = "1.0.3"
+version = "1.0.4"
 description = "A minimalist GremlinDesk using Tauri"
 authors = ["you"]
 edition = "2021"

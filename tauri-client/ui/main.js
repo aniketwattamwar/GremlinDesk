@@ -296,33 +296,80 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('property-panel').classList.add('hidden');
     });
 
-    let ws = null;
-    const wsUrl = 'ws://localhost:8182/gremlin';
+    // Connection Management
+    const defaultConnections = [
+        { id: 'local-default', name: 'Local', url: 'ws://localhost:8182/gremlin' }
+    ];
 
-    function connectWebSocket() {
+    let connections = JSON.parse(localStorage.getItem('gremlindesk_connections')) || defaultConnections;
+    let currentConnectionId = localStorage.getItem('gremlindesk_current_conn') || connections[0].id;
+    let activeSockets = {};
+
+    const connectionSelector = document.getElementById('connection-selector');
+    const addConnBtn = document.getElementById('add-connection-btn');
+    const addConnModal = document.getElementById('add-connection-modal');
+    const cancelConnBtn = document.getElementById('cancel-connection-btn');
+    const saveConnBtn = document.getElementById('save-connection-btn');
+
+    function saveConnections() {
+        localStorage.setItem('gremlindesk_connections', JSON.stringify(connections));
+        localStorage.setItem('gremlindesk_current_conn', currentConnectionId);
+    }
+
+    function renderConnectionDropdown() {
+        connectionSelector.innerHTML = '';
+        connections.forEach(conn => {
+            const option = document.createElement('option');
+            option.value = conn.id;
+            option.textContent = conn.name;
+            if (conn.id === currentConnectionId) option.selected = true;
+            connectionSelector.appendChild(option);
+        });
+    }
+
+    function updateStatusIndicator() {
+        const ws = activeSockets[currentConnectionId];
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            dot.classList.remove('disconnected');
+            dot.classList.add('connected');
+            const conn = connections.find(c => c.id === currentConnectionId);
+            statusText.textContent = `Connected (${conn ? conn.name : 'Unknown'})`;
+        } else {
+            dot.classList.remove('connected');
+            dot.classList.add('disconnected');
+            statusText.textContent = 'Disconnected';
+        }
+    }
+
+    function connectWebSocket(conn) {
         try {
-            ws = new WebSocket(wsUrl);
+            const ws = new WebSocket(conn.url);
+            activeSockets[conn.id] = ws;
             
             ws.onopen = () => {
-                dot.classList.remove('disconnected');
-                dot.classList.add('connected');
-                statusText.textContent = 'Connected (ws://localhost:8182)';
+                if (currentConnectionId === conn.id) updateStatusIndicator();
             };
 
             ws.onclose = () => {
-                dot.classList.remove('connected');
-                dot.classList.add('disconnected');
-                statusText.textContent = 'Disconnected';
+                if (currentConnectionId === conn.id) updateStatusIndicator();
                 // Try to reconnect after 5 seconds
-                setTimeout(connectWebSocket, 5000);
+                setTimeout(() => {
+                    // Only reconnect if the connection still exists in our list
+                    if(connections.some(c => c.id === conn.id)) {
+                        connectWebSocket(conn);
+                    }
+                }, 5000);
             };
 
             ws.onerror = (error) => {
-                console.error("WebSocket error:", error);
+                console.error(`WebSocket error for ${conn.name}:`, error);
                 ws.close();
             };
 
             ws.onmessage = (event) => {
+                // We only render responses for the currently selected connection
+                if (currentConnectionId !== conn.id) return;
+
                 try {
                     const response = JSON.parse(event.data);
                     let formatted = JSON.stringify(response, null, 2);
@@ -351,12 +398,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             };
         } catch (e) {
-            console.error("Failed to setup WebSocket:", e);
+            console.error(`Failed to setup WebSocket for ${conn.name}:`, e);
         }
     }
 
-    // Initialize connection
-    connectWebSocket();
+    // Initialize connections
+    renderConnectionDropdown();
+    connections.forEach(conn => connectWebSocket(conn));
+
+    // Connection UI Events
+    connectionSelector.addEventListener('change', (e) => {
+        currentConnectionId = e.target.value;
+        saveConnections();
+        updateStatusIndicator();
+    });
+
+    addConnBtn.addEventListener('click', () => {
+        addConnModal.classList.remove('hidden');
+    });
+
+    cancelConnBtn.addEventListener('click', () => {
+        addConnModal.classList.add('hidden');
+        document.getElementById('new-conn-name').value = '';
+        document.getElementById('new-conn-url').value = '';
+    });
+
+    saveConnBtn.addEventListener('click', () => {
+        const name = document.getElementById('new-conn-name').value.trim();
+        const url = document.getElementById('new-conn-url').value.trim();
+        if (name && url) {
+            const newConn = { id: crypto.randomUUID(), name, url };
+            connections.push(newConn);
+            currentConnectionId = newConn.id;
+            saveConnections();
+            renderConnectionDropdown();
+            connectWebSocket(newConn);
+            updateStatusIndicator();
+            
+            addConnModal.classList.add('hidden');
+            document.getElementById('new-conn-name').value = '';
+            document.getElementById('new-conn-url').value = '';
+        }
+    });
 
     function executeQuery() {
         const query = queryInput.value.trim();
@@ -369,6 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(graphContainer) graphContainer.innerHTML = '<div class="empty-state">Executing query...</div>';
         document.getElementById('property-panel').classList.add('hidden');
 
+        const ws = activeSockets[currentConnectionId];
         if (ws && ws.readyState === WebSocket.OPEN) {
             // Standard Gremlin Server GraphSON v3 request format
             const request = {
@@ -383,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             ws.send(JSON.stringify(request));
         } else {
-            jsonOutput.textContent = 'Error: Not connected to Gremlin Server.';
+            jsonOutput.textContent = 'Error: Not connected to the selected Gremlin Server.';
         }
     }
 
@@ -394,4 +478,92 @@ document.addEventListener('DOMContentLoaded', () => {
             executeQuery();
         }
     });
+
+    // Side Panels
+    const examplesBtn = document.getElementById('examples-btn');
+    const examplesPanel = document.getElementById('examples-panel');
+    const savedQueriesBtn = document.getElementById('saved-queries-btn');
+    const savedQueriesPanel = document.getElementById('saved-queries-panel');
+    const closeSidePanels = document.querySelectorAll('.close-side-panel');
+
+    function closeAllPanels() {
+        examplesPanel.classList.remove('open');
+        savedQueriesPanel.classList.remove('open');
+    }
+
+    examplesBtn.addEventListener('click', () => {
+        closeAllPanels();
+        examplesPanel.classList.add('open');
+    });
+
+    savedQueriesBtn.addEventListener('click', () => {
+        closeAllPanels();
+        savedQueriesPanel.classList.add('open');
+    });
+
+    closeSidePanels.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetId = e.target.getAttribute('data-target');
+            document.getElementById(targetId).classList.remove('open');
+        });
+    });
+
+    // Saved Queries
+    let savedQueries = JSON.parse(localStorage.getItem('gremlindesk_saved_queries')) || [];
+    const savedQueriesList = document.getElementById('saved-queries-list');
+    const saveCurrentQueryBtn = document.getElementById('save-current-query-btn');
+
+    function renderSavedQueries() {
+        savedQueriesList.innerHTML = '';
+        if (savedQueries.length === 0) {
+            savedQueriesList.innerHTML = '<div class="empty-state">No saved queries yet.</div>';
+            return;
+        }
+
+        savedQueries.forEach((sq, index) => {
+            const card = document.createElement('div');
+            card.className = 'saved-query-card';
+            card.innerHTML = `
+                <h4>${sq.name} <button class="delete-query-btn" data-index="${index}" title="Delete">×</button></h4>
+                <code style="display: block; background: rgba(0,0,0,0.3); padding: 0.75rem; border-radius: 6px; color: var(--code-color); font-family: Consolas, monospace; font-size: 0.85rem; word-break: break-all;">${sq.query}</code>
+            `;
+            
+            // Click card to load query
+            card.addEventListener('click', (e) => {
+                if(e.target.classList.contains('delete-query-btn')) return;
+                queryInput.value = sq.query;
+                executeQuery();
+                closeAllPanels();
+            });
+
+            // Click delete
+            const delBtn = card.querySelector('.delete-query-btn');
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                savedQueries.splice(index, 1);
+                localStorage.setItem('gremlindesk_saved_queries', JSON.stringify(savedQueries));
+                renderSavedQueries();
+            });
+
+            savedQueriesList.appendChild(card);
+        });
+    }
+
+    saveCurrentQueryBtn.addEventListener('click', () => {
+        const query = queryInput.value.trim();
+        if (!query) return;
+        
+        const name = prompt("Enter a name for this saved query:");
+        if (name) {
+            savedQueries.push({ name, query });
+            localStorage.setItem('gremlindesk_saved_queries', JSON.stringify(savedQueries));
+            renderSavedQueries();
+            
+            // Open the panel to show it
+            closeAllPanels();
+            savedQueriesPanel.classList.add('open');
+        }
+    });
+
+    renderSavedQueries();
 });

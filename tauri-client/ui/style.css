@@ -346,3 +346,193 @@ input[type="text"]:focus {
     border-color: var(--accent-color);
     transform: translateX(4px);
 }
+
+/* Connection Manager */
+.connection-manager {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.connection-selector {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    outline: none;
+}
+.icon-btn {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+}
+.icon-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--accent-hover);
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+.modal.hidden {
+    display: none;
+}
+.modal-content {
+    width: 400px;
+    padding: 1.5rem;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.input-group label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+.input-group input {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 0.75rem;
+    border-radius: 6px;
+    outline: none;
+}
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Glass Button */
+.glass-btn {
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.glass-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255,255,255,0.2);
+}
+
+/* Side Panels */
+.side-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 450px;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-left: 1px solid var(--glass-border);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.side-panel.open {
+    transform: translateX(0);
+}
+.side-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.side-panel-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+.close-side-panel {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+}
+.close-side-panel:hover {
+    color: var(--error-color);
+}
+.side-panel-content {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+/* Save Icon */
+.save-query-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 0.5rem;
+    transition: color 0.2s;
+}
+.save-query-btn:hover {
+    color: var(--accent-hover);
+}
+.saved-query-card {
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.saved-query-card:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: var(--accent-color);
+}
+.saved-query-card h4 {
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: space-between;
+}
+.delete-query-btn {
+    background: none;
+    border: none;
+    color: var(--error-color);
+    cursor: pointer;
+    opacity: 0.7;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+.delete-query-btn:hover {
+    opacity: 1;
+}
